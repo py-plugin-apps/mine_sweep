@@ -73,7 +73,7 @@ function valid(e) {
   if (e.isGroup) {
     let qq = e.sender.user_id;
     let current = group_call[e.group_id].participant;
-    return qq === current.owner || current.other.indexOf(qq) !== -1;
+    return current.allow_all || qq === current.owner || current.other.indexOf(qq) !== -1;
   } else {
     return true;
   }
@@ -101,11 +101,16 @@ export async function mine_sweep_listener(e) {
     let current = group_call[e.group_id];
 
     if (e.sender.user_id === group_call[e.group_id].participant.owner && e.msg.startsWith("邀请")) {
-      let at_list = e.message.filter(x => x.type === "at");
-      current.participant.other.push(...at_list.map(x => x.qq));
-      console.log(current.participant.other);
-      e.reply(`已添加${at_list.length}位成员一起扫雷`);
-      return true;
+      if(e.msg==="邀请所有人"){
+        group_call[e.group_id].participant.allow_all=true;
+        e.reply(`已允许所有人参与扫雷`);
+      }else {
+        let at_list = e.message.filter(x => x.type === "at");
+        current.participant.other.push(...at_list.map(x => x.qq));
+        console.log(current.participant.other);
+        e.reply(`已添加${at_list.length}位成员一起扫雷`);
+        return true;
+      }
     }
     let msg = e.msg.replace("#", "");
 
