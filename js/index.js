@@ -107,20 +107,18 @@ export async function mine_sweep_listener(e) {
       e.reply(`已添加${at_list.length}位成员一起扫雷`);
       return true;
     }
+    let msg = e.msg.replace("#", "");
 
-    if (valid(e)) {
-      let msg = e.msg.replace("#", "");
-      if (msg.startsWith("挖开") || msg.startsWith("标记")) {
+    if (msg.startsWith("挖开") || msg.startsWith("标记")) {
+      if (valid(e)) {
         current["call"].send({
           message: msg,
         });
         return true;
+      } else {
+        e.reply(["您还没有被邀请,需要", segment.at(current.participant.owner), "邀请才能参与！"]);
+        return true;
       }
-
-      return true;
-    } else {
-      e.reply(["您还没有被邀请,需要", segment.at(current.participant.owner), "邀请才能参与！"]);
-      return true;
     }
 
   } else if (!e.isGroup && private_call[e.sender.user_id]) {
