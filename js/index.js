@@ -141,7 +141,7 @@ export async function mine_sweep_listener(e) {
 export async function mine_sweep_cancel(e) {
   if (e.isGroup) {
     if (group_call[e.group_id]) {
-      if (e.sender.user_id === group_call[e.group_id].participant.owner) {
+      if (e.sender.user_id === group_call[e.group_id].participant.owner||e.isMaster) {
         group_call[e.group_id]["call"].end();
         e.reply("已取消");
         delete group_call[e.group_id];
