@@ -1,8 +1,14 @@
+import re
 from .data_source import MineSweeper, GameState, OpenResult, MarkResult
 from .utils import skin_list
 from core import Handler, Request, Response, RequestIterator, ResponseIterator
 
 package = "mine_sweep"
+
+
+class CellException(Exception):
+    def __init__(self, cell):
+        self.cell = cell
 
 
 def calc_xy(cell):
@@ -23,7 +29,7 @@ async def sweep(request_iterator: RequestIterator) -> ResponseIterator:
         game = MineSweeper(9, 9, 10)
 
     yield Response(
-        message="扫雷已开始，发送 挖开+区域号 挖开区域，发送 标记+区域号 标记区域,发送 邀请+@群成员 邀请其他人一起扫雷",
+        message="扫雷已开始，发送 挖开+区域号 挖开区域，发送 标记+区域号 标记区域（可以连续写多个区域号）\n发送 邀请+@群成员 或 邀请所有人 邀请其他人一起扫雷",
         image=game.draw(),
         messageDict={"at": request.event.sender.qq}
     )
@@ -33,30 +39,37 @@ async def sweep(request_iterator: RequestIterator) -> ResponseIterator:
         msg = request.message
         if msg.startswith("挖开"):
             try:
-                x, y = calc_xy(msg[2:])
-                if x >= game.row or y >= game.column:
-                    raise Exception()
-            except Exception:
-                yield Response("无效的坐标!")
-                continue
+                for i in re.findall(r"[a-z]\d+", msg.lower()):
 
-            game.open(x, y)
+                    x, y = calc_xy(i)
+                    if x >= game.row or y >= game.column:
+                        raise CellException(i)
+
+                    game.open(x, y)
+            except CellException as e:
+                yield Response(f"无效的坐标:{e.cell}")
+                continue
             if game.state == GameState.FAIL or game.state == GameState.WIN:
                 break
             yield Response(image=game.draw())
 
         elif msg.startswith("标记"):
             try:
-                x, y = calc_xy(msg[2:])
-                if x >= game.row or y >= game.column:
-                    raise Exception()
-            except Exception:
-                yield Response("无效的坐标!")
-                continue
+                for i in re.findall(r"[a-z]\d+", msg.lower()):
+                    x, y = calc_xy(i)
+                    if x >= game.row or y >= game.column:
+                        raise CellException(i)
 
-            game.mark(x, y)
+                    game.mark(x, y)
+            except CellException as e:
+                yield Response(f"无效的坐标:{e.cell}")
+                continue
             yield Response(image=game.draw())
         else:
             yield Response("发送 挖开+区域号 挖开区域，发送 标记+区域号 标记区域")
+    if game.state == GameState.WIN:
+        msg = "游戏结束,恭喜通关"
+    else:
+        msg = "游戏结束"
 
-    yield Response("游戏结束", image=game.draw())
+    yield Response(msg, image=game.draw())

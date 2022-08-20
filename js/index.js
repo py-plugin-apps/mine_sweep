@@ -135,9 +135,6 @@ export async function mine_sweep_listener(e) {
       });
       return true;
     }
-    return true;
-  } else {
-    return false;
   }
 }
 
